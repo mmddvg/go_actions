@@ -1,0 +1,66 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go hello world ghcr
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+
+jobs:
+
+
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+      
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Log in to the Container registry
+      uses: docker/login-action@3
+      with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@5
+      with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+    - name: Build and push Docker image
+      id: push
+      uses: docker/build-push-action@6
+      with:
+          context: .
+          file: ./Dockerfile-prod
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+    - name: Generate artifact attestation
+      uses: actions/attest-build-provenance@v1
+      with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+    #- name: Set up Go
+    #  uses: actions/setup-go@v4
+    #  with:
+    #    go-version: '1.20'
+
+    #- name: Build
+    #  run: go build .
