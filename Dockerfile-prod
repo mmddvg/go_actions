@@ -9,7 +9,7 @@ COPY . .
 
 
 # Build the Go server
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/tmp/main cmd/byc_p_ws/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/tmp/main main.go
 
 FROM alpine:latest
 
